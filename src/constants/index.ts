@@ -19,7 +19,6 @@ import { userProfileSchema, type UserProfileData } from '@/lib/validations/users
 import { COMMON_TIMEZONES, LANGUAGES, DATE_FORMATS, TIME_FORMATS } from '@/constants';
 import { getInitials } from '@/lib/utils';
 import toast from 'react-hot-toast';
-import { api } from '@/lib/api';
 
 interface ProfileFormProps {
   initialData?: Partial<UserProfileData>;
@@ -99,16 +98,8 @@ export function ProfileForm({ initialData, onSubmit, isLoading = false }: Profil
       formData.append('field', field);
       
       const response = await api.upload('/api/v1/users/upload-image/', formData);
-      const imageUrl = response.data.data?.url;
-      
-      if (imageUrl) {
-        setValue(field, imageUrl);
-        toast.success('Image uploaded successfully');
-      }
-    } catch (error: any) {
-      toast.error(error.error || 'Failed to upload image');
-    }
-  };
+      };
+  }
 
   const formatHour = (hour: number) => {
     if (watchedValues.time_format === '24h') {
