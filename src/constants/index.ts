@@ -57,6 +57,7 @@ export const API_ENDPOINTS = {
     CONFIRM_PASSWORD_RESET: '/api/v1/users/confirm-password-reset/',
     VERIFY_EMAIL: '/api/v1/users/verify-email/',
     RESEND_VERIFICATION: '/api/v1/users/resend-verification/',
+    PUBLIC_PROFILE: (organizerSlug: string) => `/api/v1/users/public/${organizerSlug}/`,
   },
   
   // MFA

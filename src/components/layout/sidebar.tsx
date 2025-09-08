@@ -18,6 +18,11 @@
 +    icon: ShieldCheckIcon,
    },
   {
+    name: 'Profile',
+    href: ROUTES.PROFILE,
+    icon: UserIcon,
+  },
+  {
     name: 'Workflows',
     href: ROUTES.WORKFLOWS,
     icon: BoltIcon,
