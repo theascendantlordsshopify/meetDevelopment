@@ -86,9 +86,17 @@ export const API_ENDPOINTS = {
   // Availability
   AVAILABILITY: {
     RULES: '/api/v1/availability/rules/',
+    RULE_DETAIL: (id: string) => `/api/v1/availability/rules/${id}/`,
     OVERRIDES: '/api/v1/availability/overrides/',
+    OVERRIDE_DETAIL: (id: string) => `/api/v1/availability/overrides/${id}/`,
+    RECURRING_BLOCKS: '/api/v1/availability/recurring-blocks/',
+    RECURRING_BLOCK_DETAIL: (id: string) => `/api/v1/availability/recurring-blocks/${id}/`,
     BLOCKED: '/api/v1/availability/blocked/',
+    BLOCKED_DETAIL: (id: string) => `/api/v1/availability/blocked/${id}/`,
     BUFFER: '/api/v1/availability/buffer/',
+    STATS: '/api/v1/availability/stats/',
+    CACHE_CLEAR: '/api/v1/availability/cache/clear/',
+    CACHE_PRECOMPUTE: '/api/v1/availability/cache/precompute/',
     SLOTS: (organizerSlug: string, eventSlug: string) => 
       `/api/v1/events/slots/${organizerSlug}/${eventSlug}/`,
     CALCULATED_SLOTS: (organizerSlug: string) => 
@@ -142,6 +150,15 @@ export const BUFFER_TIME_OPTIONS = [0, 5, 10, 15, 30, 45, 60, 90, 120] as const;
 
 // Slot Interval Options (in minutes)
 export const SLOT_INTERVAL_OPTIONS = [5, 10, 15, 20, 30, 60] as const;
+
+// Recurring Block Sources
+export const BLOCK_SOURCES = [
+  { value: 'manual', label: 'Manual' },
+  { value: 'google_calendar', label: 'Google Calendar' },
+  { value: 'outlook_calendar', label: 'Outlook Calendar' },
+  { value: 'apple_calendar', label: 'Apple Calendar' },
+  { value: 'external_sync', label: 'External Sync' },
+] as const;
 
 // Days of Week
 export const DAYS_OF_WEEK = [
