@@ -107,19 +107,6 @@ export function ProfileForm({ initialData, onSubmit, isLoading = false }: Profil
     } catch (error: any) {
       toast.error(error.error || 'Failed to upload image');
     }
-      formData.append('file', file);
-      formData.append('field', field);
-      
-      const response = await api.upload('/api/v1/users/upload-image/', formData);
-      const imageUrl = response.data.data?.url;
-      
-      if (imageUrl) {
-        setValue(field, imageUrl);
-        toast.success('Image uploaded successfully');
-      }
-    } catch (error: any) {
-      toast.error(error.error || 'Failed to upload image');
-    }
   };
 
   const formatHour = (hour: number) => {
