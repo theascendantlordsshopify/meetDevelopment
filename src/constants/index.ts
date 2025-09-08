@@ -19,6 +19,7 @@ import { userProfileSchema, type UserProfileData } from '@/lib/validations/users
 import { COMMON_TIMEZONES, LANGUAGES, DATE_FORMATS, TIME_FORMATS } from '@/constants';
 import { getInitials } from '@/lib/utils';
 import toast from 'react-hot-toast';
+import { api } from '@/lib/api';
 
 interface ProfileFormProps {
   initialData?: Partial<UserProfileData>;
@@ -94,10 +95,6 @@ export function ProfileForm({ initialData, onSubmit, isLoading = false }: Profil
     // This would typically upload to a file storage service
     try {
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('field', field);
-      
-      const response = await api.upload('/api/v1/users/upload-image/', formData);
       formData.append('file', file);
       formData.append('field', field);
       
