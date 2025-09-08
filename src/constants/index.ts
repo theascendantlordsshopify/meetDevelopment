@@ -127,6 +127,8 @@ export const API_ENDPOINTS = {
     TEST: (id: string) => `/api/v1/workflows/${id}/test/`,
     VALIDATE: (id: string) => `/api/v1/workflows/${id}/validate/`,
     TEMPLATES: '/api/v1/workflows/templates/',
+    ACTIONS: (workflowId: string) => `/api/v1/workflows/${workflowId}/actions/`,
+    ACTION_DETAIL: (actionId: string) => `/api/v1/workflows/actions/${actionId}/`,
   },
   
   // Notifications

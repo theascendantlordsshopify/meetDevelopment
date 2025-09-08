@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { Plus, Play, Settings, TestTube } from 'lucide-react';
+import { Plus, Play, Pause, Settings, TestTube, Zap, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,6 +12,9 @@ import { WorkflowActionCard } from './workflow-action-card';
 import { WorkflowActionForm } from './workflow-action-form';
 import { WorkflowTester } from './workflow-tester';
 import { type WorkflowActionData } from '@/lib/validations/workflows';
+import { api } from '@/lib/api/client';
+import { API_ENDPOINTS } from '@/constants';
+import toast from 'react-hot-toast';
 
 interface Workflow {
   id: string;
@@ -19,6 +22,9 @@ interface Workflow {
   description?: string;
   trigger: string;
   is_active: boolean;
+  total_executions: number;
+  successful_executions: number;
+  failed_executions: number;
 }
 
 interface WorkflowAction {
@@ -34,6 +40,7 @@ interface WorkflowAction {
   total_executions: number;
   successful_executions: number;
   failed_executions: number;
+  last_executed_at?: string;
 }
 
 interface WorkflowBuilderProps {
@@ -83,7 +90,7 @@ export function WorkflowBuilder({
   const handleCreateAction = async (actionData: WorkflowActionData) => {
     try {
       setIsLoading(true);
-      const response = await api.post(`/api/v1/workflows/${workflow.id}/actions/`, {
+      const response = await api.post(`${API_ENDPOINTS.WORKFLOWS.LIST}${workflow.id}/actions/`, {
         ...actionData,
         order: actions.length,
       });
@@ -147,6 +154,18 @@ export function WorkflowBuilder({
     }
   };
 
+  const handleToggleWorkflow = async () => {
+    try {
+      const response = await api.patch(API_ENDPOINTS.WORKFLOWS.DETAIL(workflow.id), {
+        is_active: !workflow.is_active
+      });
+      onWorkflowUpdate(response.data.data);
+      toast.success(`Workflow ${workflow.is_active ? 'disabled' : 'enabled'}`);
+    } catch (error: any) {
+      toast.error(error.error || 'Failed to update workflow');
+    }
+  };
+
   const sortedActions = [...actions].sort((a, b) => a.order - b.order);
 
   return (
@@ -173,9 +192,21 @@ export function WorkflowBuilder({
                 <TestTube className="h-4 w-4 mr-2" />
                 Test Workflow
               </Button>
-              <Button variant="outline">
-                <Settings className="h-4 w-4 mr-2" />
-                Settings
+              <Button
+                variant={workflow.is_active ? 'destructive' : 'default'}
+                onClick={handleToggleWorkflow}
+              >
+                {workflow.is_active ? (
+                  <>
+                    <Pause className="h-4 w-4 mr-2" />
+                    Disable
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-4 w-4 mr-2" />
+                    Enable
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -232,40 +263,42 @@ export function WorkflowBuilder({
               </AlertDescription>
             </Alert>
           ) : (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={sortedActions.map(action => action.id)}
-                strategy={verticalListSortingStrategy}
+            <div className="relative pl-8">
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
               >
-                <div className="space-y-4">
-                  {sortedActions.map((action, index) => (
-                    <div key={action.id} className="relative">
-                      {/* Step Number */}
-                      <div className="absolute -left-8 top-4 w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-sm font-medium z-10">
-                        {index + 1}
+                <SortableContext
+                  items={sortedActions.map(action => action.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-4">
+                    {sortedActions.map((action, index) => (
+                      <div key={action.id} className="relative">
+                        {/* Step Number */}
+                        <div className="absolute -left-8 top-4 w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-sm font-medium z-10">
+                          {index + 1}
+                        </div>
+                        
+                        {/* Connection Line */}
+                        {index < sortedActions.length - 1 && (
+                          <div className="absolute -left-5 top-10 w-0.5 h-8 bg-primary/30" />
+                        )}
+                        
+                        <WorkflowActionCard
+                          action={action}
+                          onEdit={setEditingAction}
+                          onDelete={handleDeleteAction}
+                          onToggleActive={handleToggleActionActive}
+                          isLoading={isLoading}
+                        />
                       </div>
-                      
-                      {/* Connection Line */}
-                      {index < sortedActions.length - 1 && (
-                        <div className="absolute -left-5 top-10 w-0.5 h-8 bg-primary/30" />
-                      )}
-                      
-                      <WorkflowActionCard
-                        action={action}
-                        onEdit={setEditingAction}
-                        onDelete={handleDeleteAction}
-                        onToggleActive={handleToggleActionActive}
-                        isLoading={isLoading}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            </div>
           )}
 
           {/* Workflow Status */}
@@ -277,24 +310,18 @@ export function WorkflowBuilder({
                   <span className="font-medium">
                     Workflow is {workflow.is_active ? 'Active' : 'Inactive'}
                   </span>
-                </div>
-                <Button
-                  variant="outline"
-                  onClick={() => onWorkflowUpdate({ ...workflow, is_active: !workflow.is_active })}
-                  disabled={isLoading}
-                >
-                  {workflow.is_active ? (
-                    <>
-                      <Pause className="h-4 w-4 mr-2" />
-                      Disable
-                    </>
-                  ) : (
-                    <>
-                      <Play className="h-4 w-4 mr-2" />
-                      Enable
-                    </>
+                  {workflow.is_active && sortedActions.length === 0 && (
+                    <Badge variant="destructive" className="text-xs">
+                      No Actions
+                    </Badge>
                   )}
-                </Button>
+                </div>
+                
+                {workflow.total_executions > 0 && (
+                  <div className="text-sm text-muted-foreground">
+                    {workflow.total_executions} executions • {Math.round((workflow.successful_executions / workflow.total_executions) * 100)}% success rate
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -309,16 +336,35 @@ export function WorkflowBuilder({
         <TabsContent value="analytics" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Workflow Performance</CardTitle>
+              <CardTitle className="flex items-center space-x-2">
+                <BarChart3 className="h-5 w-5" />
+                <span>Workflow Performance</span>
+              </CardTitle>
               <CardDescription>
                 Analytics and performance metrics for this workflow
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center text-muted-foreground py-8">
-                Workflow analytics coming soon. This will show execution history, 
-                performance metrics, and optimization suggestions.
-              </div>
+              {workflow.total_executions === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
+                  No execution data yet. Analytics will appear here once the workflow starts running.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold">{workflow.total_executions}</div>
+                    <div className="text-sm text-muted-foreground">Total Executions</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-green-600">{workflow.successful_executions}</div>
+                    <div className="text-sm text-muted-foreground">Successful</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-red-600">{workflow.failed_executions}</div>
+                    <div className="text-sm text-muted-foreground">Failed</div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

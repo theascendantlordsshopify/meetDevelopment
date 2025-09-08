@@ -3,6 +3,7 @@
    ChartBarIcon,
    Cog6ToothIcon,
 +  ShieldCheckIcon,
+  BoltIcon,
  } from '@heroicons/react/24/outline';
  import { ROUTES } from '@/constants';
  import { cn } from '@/lib/utils';
@@ -16,5 +17,10 @@
 +    href: ROUTES.MFA_MANAGE,
 +    icon: ShieldCheckIcon,
    },
+  {
+    name: 'Workflows',
+    href: ROUTES.WORKFLOWS,
+    icon: BoltIcon,
+  },
    {
      name: 'Settings',

@@ -90,6 +90,11 @@ export function WorkflowActionForm({
     }
   };
 
+  const insertVariable = (field: 'subject' | 'message', variable: string) => {
+    const currentValue = watchedValues[field] || '';
+    setValue(field, currentValue + `{{${variable}}}`);
+  };
+
   const needsSubject = watchedValues.action_type === 'send_email';
   const needsWebhookUrl = watchedValues.action_type === 'webhook';
   const needsCustomEmail = watchedValues.recipient === 'custom';
@@ -231,21 +236,18 @@ export function WorkflowActionForm({
             <TabsContent value="content" className="space-y-6">
               {needsSubject && (
                 <div className="space-y-2">
-                  <Label htmlFor="subject">Email Subject *</Label>
-                  <div className="space-y-2">
-                    <Input
-                      id="subject"
-                      {...register('subject')}
-                      placeholder="e.g., Your booking is confirmed!"
-                      disabled={isSubmitting || isLoading}
-                    />
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="subject">Email Subject *</Label>
                     <TemplateVariableHelper
-                      onVariableInsert={(variable) => {
-                        const currentSubject = watchedValues.subject || '';
-                        setValue('subject', currentSubject + `{{${variable}}}`);
-                      }}
+                      onVariableInsert={(variable) => insertVariable('subject', variable)}
                     />
                   </div>
+                  <Input
+                    id="subject"
+                    {...register('subject')}
+                    placeholder="e.g., Your booking is confirmed!"
+                    disabled={isSubmitting || isLoading}
+                  />
                   {errors.subject && (
                     <p className="text-sm text-destructive">{errors.subject.message}</p>
                   )}
@@ -253,31 +255,28 @@ export function WorkflowActionForm({
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="message">
-                  {watchedValues.action_type === 'send_email' ? 'Email Message' : 
-                   watchedValues.action_type === 'send_sms' ? 'SMS Message' : 'Message'} *
-                </Label>
-                <div className="space-y-2">
-                  <Textarea
-                    id="message"
-                    {...register('message')}
-                    placeholder={
-                      watchedValues.action_type === 'send_email' 
-                        ? 'Hi {{invitee_name}}, your booking for {{event_type_name}} is confirmed...'
-                        : watchedValues.action_type === 'send_sms'
-                        ? 'Hi {{invitee_name}}, reminder: {{event_type_name}} at {{start_time}}'
-                        : 'Enter your message...'
-                    }
-                    rows={6}
-                    disabled={isSubmitting || isLoading}
-                  />
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="message">
+                    {watchedValues.action_type === 'send_email' ? 'Email Message' : 
+                     watchedValues.action_type === 'send_sms' ? 'SMS Message' : 'Message'} *
+                  </Label>
                   <TemplateVariableHelper
-                    onVariableInsert={(variable) => {
-                      const currentMessage = watchedValues.message || '';
-                      setValue('message', currentMessage + `{{${variable}}}`);
-                    }}
+                    onVariableInsert={(variable) => insertVariable('message', variable)}
                   />
                 </div>
+                <Textarea
+                  id="message"
+                  {...register('message')}
+                  placeholder={
+                    watchedValues.action_type === 'send_email' 
+                      ? 'Hi {{invitee_name}}, your booking for {{event_type_name}} is confirmed...'
+                      : watchedValues.action_type === 'send_sms'
+                      ? 'Hi {{invitee_name}}, reminder: {{event_type_name}} at {{start_time}}'
+                      : 'Enter your message...'
+                  }
+                  rows={8}
+                  disabled={isSubmitting || isLoading}
+                />
                 {errors.message && (
                   <p className="text-sm text-destructive">{errors.message.message}</p>
                 )}
@@ -294,6 +293,14 @@ export function WorkflowActionForm({
                   )}
                 </div>
               )}
+
+              {/* Template Preview */}
+              <Alert>
+                <AlertDescription>
+                  <strong>Tip:</strong> Use template variables like {{`invitee_name`}} and {{`event_type_name`}} 
+                  to personalize your messages. Click "Insert Variable" to see all available options.
+                </AlertDescription>
+              </Alert>
             </TabsContent>
 
             {/* Conditions */}
