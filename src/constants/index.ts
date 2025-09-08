@@ -108,11 +108,16 @@ export const API_ENDPOINTS = {
   // Integrations
   INTEGRATIONS: {
     CALENDAR: '/api/v1/integrations/calendar/',
+    CALENDAR_DETAIL: (id: string) => `/api/v1/integrations/calendar/${id}/`,
     VIDEO: '/api/v1/integrations/video/',
+    VIDEO_DETAIL: (id: string) => `/api/v1/integrations/video/${id}/`,
     WEBHOOKS: '/api/v1/integrations/webhooks/',
+    WEBHOOK_DETAIL: (id: string) => `/api/v1/integrations/webhooks/${id}/`,
     OAUTH_INITIATE: '/api/v1/integrations/oauth/initiate/',
     OAUTH_CALLBACK: '/api/v1/integrations/oauth/callback/',
     HEALTH: '/api/v1/integrations/health/',
+    LOGS: '/api/v1/integrations/logs/',
+    CONFLICTS: '/api/v1/integrations/calendar/conflicts/',
   },
   
   // Workflows
