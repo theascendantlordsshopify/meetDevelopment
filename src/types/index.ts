@@ -370,6 +370,8 @@ export interface NotificationTemplate extends BaseModel {
   is_active: boolean;
   is_default: boolean;
   required_placeholders: string[];
+  usage_count?: number;
+  last_used?: string;
 }
 
 export interface NotificationLog extends BaseModel {
@@ -392,6 +394,10 @@ export interface NotificationLog extends BaseModel {
   external_id: string;
   delivery_status: string;
   provider_response: any;
+  template_info?: {
+    name: string;
+    template_type: string;
+  };
 }
 
 export interface NotificationPreference extends BaseModel {

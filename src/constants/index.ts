@@ -15,6 +15,7 @@ export const ROUTES = {
   FORGOT_PASSWORD: '/auth/forgot-password',
   RESET_PASSWORD: '/auth/reset-password',
   VERIFY_EMAIL: '/auth/verify-email',
+  FORCE_PASSWORD_CHANGE: '/auth/force-password-change',
   
   // Dashboard routes
   DASHBOARD: '/dashboard',
@@ -28,6 +29,12 @@ export const ROUTES = {
   ANALYTICS: '/analytics',
   SETTINGS: '/settings',
   
+  // Notification routes
+  NOTIFICATIONS: '/notifications',
+  NOTIFICATION_PREFERENCES: '/notifications/preferences',
+  NOTIFICATION_TEMPLATES: '/notifications/templates',
+  NOTIFICATION_HISTORY: '/notifications/history',
+  
   // MFA routes
   MFA_SETUP: '/mfa/setup',
   MFA_MANAGE: '/mfa/manage',
@@ -35,6 +42,7 @@ export const ROUTES = {
   // Profile routes
   PROFILE: '/profile',
   TEAM: '/team',
+  INVITATION: '/invitation',
   
   // Public booking routes
   PUBLIC_PROFILE: (slug: string) => `/${slug}`,
@@ -58,6 +66,7 @@ export const API_ENDPOINTS = {
     VERIFY_EMAIL: '/api/v1/users/verify-email/',
     RESEND_VERIFICATION: '/api/v1/users/resend-verification/',
     PUBLIC_PROFILE: (organizerSlug: string) => `/api/v1/users/public/${organizerSlug}/`,
+    FORCE_PASSWORD_CHANGE: '/api/v1/users/force-password-change/',
   },
   
   // MFA
@@ -67,6 +76,16 @@ export const API_ENDPOINTS = {
     DISABLE: '/api/v1/users/mfa/disable/',
     DEVICES: '/api/v1/users/mfa/devices/',
     BACKUP_CODES_REGENERATE: '/api/v1/users/mfa/backup-codes/regenerate/',
+  },
+  
+  // Team Management
+  TEAM: {
+    MEMBERS: '/api/v1/users/team-members/',
+    INVITATIONS: '/api/v1/users/invitations/',
+    INVITATION_DETAIL: (id: string) => `/api/v1/users/invitations/${id}/`,
+    INVITATION_RESPOND: '/api/v1/users/invitations/respond/',
+    ROLES: '/api/v1/users/roles/',
+    PERMISSIONS: '/api/v1/users/permissions/',
   },
   
   // Event Types
@@ -149,6 +168,20 @@ export const API_ENDPOINTS = {
     IMPORT: '/api/v1/contacts/import/',
     EXPORT: '/api/v1/contacts/export/',
     STATS: '/api/v1/contacts/stats/',
+  },
+  
+  // Notifications
+  NOTIFICATIONS: {
+    TEMPLATES: '/api/v1/notifications/templates/',
+    TEMPLATE_DETAIL: (id: string) => `/api/v1/notifications/templates/${id}/`,
+    TEMPLATE_TEST: (id: string) => `/api/v1/notifications/templates/${id}/test/`,
+    LOGS: '/api/v1/notifications/logs/',
+    LOG_DETAIL: (id: string) => `/api/v1/notifications/logs/${id}/`,
+    LOG_RESEND: (id: string) => `/api/v1/notifications/${id}/resend/`,
+    PREFERENCES: '/api/v1/notifications/preferences/',
+    SEND: '/api/v1/notifications/send/',
+    STATS: '/api/v1/notifications/stats/',
+    HEALTH: '/api/v1/notifications/health/',
   },
 } as const;
 
