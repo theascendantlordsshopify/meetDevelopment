@@ -1,365 +1,721 @@
-// API Configuration
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-export const APP_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+'use client';
 
-// Application Constants
-export const APP_NAME = 'CalendlyClone';
-export const APP_DESCRIPTION = 'Smart Scheduling Made Simple';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Upload, Palette, Globe, Clock, User, Building, Phone, Mail, Eye, EyeOff } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { userProfileSchema, type UserProfileData } from '@/lib/validations/users';
+import { COMMON_TIMEZONES, LANGUAGES, DATE_FORMATS, TIME_FORMATS } from '@/constants';
+import { getInitials } from '@/lib/utils';
+import toast from 'react-hot-toast';
 
-// Route Constants
-export const ROUTES = {
-  // Public routes
-  HOME: '/',
-  LOGIN: '/auth/login',
-  REGISTER: '/auth/register',
-  FORGOT_PASSWORD: '/auth/forgot-password',
-  RESET_PASSWORD: '/auth/reset-password',
-  VERIFY_EMAIL: '/auth/verify-email',
-  FORCE_PASSWORD_CHANGE: '/auth/force-password-change',
-  
-  // Dashboard routes
-  DASHBOARD: '/dashboard',
-  EVENT_TYPES: '/event-types',
-  BOOKINGS: '/bookings',
-  AVAILABILITY: '/availability',
-  INTEGRATIONS: '/integrations',
-  WORKFLOWS: '/workflows',
-  NOTIFICATIONS: '/notifications',
-  CONTACTS: '/contacts',
-  ANALYTICS: '/analytics',
-  SETTINGS: '/settings',
-  
-  // Notification routes
-  NOTIFICATIONS: '/notifications',
-  NOTIFICATION_PREFERENCES: '/notifications/preferences',
-  NOTIFICATION_TEMPLATES: '/notifications/templates',
-  NOTIFICATION_HISTORY: '/notifications/history',
-  
-  // MFA routes
-  MFA_SETUP: '/mfa/setup',
-  MFA_MANAGE: '/mfa/manage',
-  
-  // Profile routes
-  PROFILE: '/profile',
-  TEAM: '/team',
-  INVITATION: '/invitation',
-  
-  // Public booking routes
-  PUBLIC_PROFILE: (slug: string) => `/${slug}`,
-  PUBLIC_BOOKING: (organizerSlug: string, eventSlug: string) => `/${organizerSlug}/${eventSlug}`,
-  PUBLIC_BOOKING: (organizerSlug: string, eventSlug: string) => `/${organizerSlug}/${eventSlug}`,
-  BOOKING_MANAGEMENT: (token: string) => `/booking/${token}/manage`,
-} as const;
+interface ProfileFormProps {
+  initialData?: Partial<UserProfileData>;
+  onSubmit: (data: UserProfileData) => Promise<void>;
+  isLoading?: boolean;
+}
 
-// API Endpoints
-export const API_ENDPOINTS = {
-  // Authentication
-  AUTH: {
-    LOGIN: '/api/v1/users/login/',
-    REGISTER: '/api/v1/users/register/',
-    LOGOUT: '/api/v1/users/logout/',
-    REFRESH: '/api/v1/users/refresh/',
-    PROFILE: '/api/v1/users/profile/',
-    CHANGE_PASSWORD: '/api/v1/users/change-password/',
-    REQUEST_PASSWORD_RESET: '/api/v1/users/request-password-reset/',
-    CONFIRM_PASSWORD_RESET: '/api/v1/users/confirm-password-reset/',
-    VERIFY_EMAIL: '/api/v1/users/verify-email/',
-    RESEND_VERIFICATION: '/api/v1/users/resend-verification/',
-    PUBLIC_PROFILE: (organizerSlug: string) => `/api/v1/users/public/${organizerSlug}/`,
-    FORCE_PASSWORD_CHANGE: '/api/v1/users/force-password-change/',
-  },
-  
-  // MFA
-  MFA: {
-    SETUP: '/api/v1/users/mfa/setup/',
-    VERIFY: '/api/v1/users/mfa/verify/',
-    DISABLE: '/api/v1/users/mfa/disable/',
-    DEVICES: '/api/v1/users/mfa/devices/',
-    BACKUP_CODES_REGENERATE: '/api/v1/users/mfa/backup-codes/regenerate/',
-  },
-  
-  // Team Management
-  TEAM: {
-    MEMBERS: '/api/v1/users/team-members/',
-    INVITATIONS: '/api/v1/users/invitations/',
-    INVITATION_DETAIL: (id: string) => `/api/v1/users/invitations/${id}/`,
-    INVITATION_RESPOND: '/api/v1/users/invitations/respond/',
-    ROLES: '/api/v1/users/roles/',
-    PERMISSIONS: '/api/v1/users/permissions/',
-  },
-  
-  // Event Types
-  EVENT_TYPES: {
-    LIST: '/api/v1/events/event-types/',
-    DETAIL: (id: string) => `/api/v1/events/event-types/${id}/`,
-    PUBLIC: (organizerSlug: string, eventSlug: string) => `/${organizerSlug}/${eventSlug}/`,
-    PUBLIC: (organizerSlug: string, eventSlug: string) => `/${organizerSlug}/${eventSlug}/`,
-  },
-  
-  // Bookings
-  BOOKINGS: {
-    LIST: '/api/v1/events/bookings/',
-    DETAIL: (id: string) => `/api/v1/events/bookings/${id}/`,
-    CREATE: '/api/v1/events/bookings/create/',
-    MANAGE: (token: string) => `/api/v1/events/booking/${token}/manage/`,
-    ANALYTICS: '/api/v1/events/analytics/',
-  },
-  
-  // Availability
-  AVAILABILITY: {
-    RULES: '/api/v1/availability/rules/',
-    RULE_DETAIL: (id: string) => `/api/v1/availability/rules/${id}/`,
-    OVERRIDES: '/api/v1/availability/overrides/',
-    OVERRIDE_DETAIL: (id: string) => `/api/v1/availability/overrides/${id}/`,
-    RECURRING_BLOCKS: '/api/v1/availability/recurring-blocks/',
-    RECURRING_BLOCK_DETAIL: (id: string) => `/api/v1/availability/recurring-blocks/${id}/`,
-    BLOCKED: '/api/v1/availability/blocked/',
-    BLOCKED_DETAIL: (id: string) => `/api/v1/availability/blocked/${id}/`,
-    BUFFER: '/api/v1/availability/buffer/',
-    STATS: '/api/v1/availability/stats/',
-    CACHE_CLEAR: '/api/v1/availability/cache/clear/',
-    CACHE_PRECOMPUTE: '/api/v1/availability/cache/precompute/',
-    SLOTS: (organizerSlug: string, eventSlug: string) => 
-      `/api/v1/events/slots/${organizerSlug}/${eventSlug}/`,
-    CALCULATED_SLOTS: (organizerSlug: string) => 
-      `/api/v1/availability/calculated-slots/${organizerSlug}/`,
-  },
-  
-  // Integrations
-  INTEGRATIONS: {
-    CALENDAR: '/api/v1/integrations/calendar/',
-    CALENDAR_DETAIL: (id: string) => `/api/v1/integrations/calendar/${id}/`,
-    VIDEO: '/api/v1/integrations/video/',
-    VIDEO_DETAIL: (id: string) => `/api/v1/integrations/video/${id}/`,
-    WEBHOOKS: '/api/v1/integrations/webhooks/',
-    WEBHOOK_DETAIL: (id: string) => `/api/v1/integrations/webhooks/${id}/`,
-    OAUTH_INITIATE: '/api/v1/integrations/oauth/initiate/',
-    OAUTH_CALLBACK: '/api/v1/integrations/oauth/callback/',
-    HEALTH: '/api/v1/integrations/health/',
-    LOGS: '/api/v1/integrations/logs/',
-    CONFLICTS: '/api/v1/integrations/calendar/conflicts/',
-  },
-  
-  // Workflows
-  WORKFLOWS: {
-    LIST: '/api/v1/workflows/',
-    DETAIL: (id: string) => `/api/v1/workflows/${id}/`,
-    TEST: (id: string) => `/api/v1/workflows/${id}/test/`,
-    VALIDATE: (id: string) => `/api/v1/workflows/${id}/validate/`,
-    TEMPLATES: '/api/v1/workflows/templates/',
-    ACTIONS: (workflowId: string) => `/api/v1/workflows/${workflowId}/actions/`,
-    ACTION_DETAIL: (actionId: string) => `/api/v1/workflows/actions/${actionId}/`,
-  },
-  
-  // Notifications
-  NOTIFICATIONS: {
-    TEMPLATES: '/api/v1/notifications/templates/',
-    LOGS: '/api/v1/notifications/logs/',
-    PREFERENCES: '/api/v1/notifications/preferences/',
-    SEND: '/api/v1/notifications/send/',
-    STATS: '/api/v1/notifications/stats/',
-  },
-  
-  // Contacts
-  CONTACTS: {
-    LIST: '/api/v1/contacts/',
-    DETAIL: (id: string) => `/api/v1/contacts/${id}/`,
-    GROUPS: '/api/v1/contacts/groups/',
-    IMPORT: '/api/v1/contacts/import/',
-    EXPORT: '/api/v1/contacts/export/',
-    STATS: '/api/v1/contacts/stats/',
-  },
-  
-  // Notifications
-  NOTIFICATIONS: {
-    TEMPLATES: '/api/v1/notifications/templates/',
-    TEMPLATE_DETAIL: (id: string) => `/api/v1/notifications/templates/${id}/`,
-    TEMPLATE_TEST: (id: string) => `/api/v1/notifications/templates/${id}/test/`,
-    LOGS: '/api/v1/notifications/logs/',
-    LOG_DETAIL: (id: string) => `/api/v1/notifications/logs/${id}/`,
-    LOG_RESEND: (id: string) => `/api/v1/notifications/${id}/resend/`,
-    PREFERENCES: '/api/v1/notifications/preferences/',
-    SEND: '/api/v1/notifications/send/',
-    STATS: '/api/v1/notifications/stats/',
-    HEALTH: '/api/v1/notifications/health/',
-  },
-} as const;
+const PRESET_COLORS = [
+  '#0066cc', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', 
+  '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1',
+  '#1f2937', '#374151', '#6b7280', '#9ca3af', '#d1d5db'
+];
 
-// Event Type Durations (in minutes)
-export const EVENT_DURATIONS = [15, 30, 45, 60, 90, 120, 180, 240] as const;
+const HOUR_OPTIONS = Array.from({ length: 24 }, (_, i) => ({
+  value: i,
+  label: `${i.toString().padStart(2, '0')}:00`,
+}));
 
-// Buffer Time Options (in minutes)
-export const BUFFER_TIME_OPTIONS = [0, 5, 10, 15, 30, 45, 60, 90, 120] as const;
+export function ProfileForm({ initialData, onSubmit, isLoading = false }: ProfileFormProps) {
+  const [selectedColor, setSelectedColor] = useState(initialData?.brand_color || '#0066cc');
+  const [colorPickerOpen, setColorPickerOpen] = useState(false);
+  const [profilePreview, setProfilePreview] = useState(false);
 
-// Slot Interval Options (in minutes)
-export const SLOT_INTERVAL_OPTIONS = [5, 10, 15, 20, 30, 60] as const;
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<UserProfileData>({
+    resolver: zodResolver(userProfileSchema),
+    defaultValues: {
+      display_name: initialData?.display_name ?? '',
+      bio: initialData?.bio ?? '',
+      profile_picture: initialData?.profile_picture ?? '',
+      phone: initialData?.phone ?? '',
+      website: initialData?.website ?? '',
+      company: initialData?.company ?? '',
+      job_title: initialData?.job_title ?? '',
+      timezone_name: initialData?.timezone_name ?? 'UTC',
+      language: initialData?.language ?? 'en',
+      date_format: initialData?.date_format ?? 'MM/DD/YYYY',
+      time_format: initialData?.time_format ?? '12h',
+      brand_color: initialData?.brand_color ?? '#0066cc',
+      brand_logo: initialData?.brand_logo ?? '',
+      public_profile: initialData?.public_profile ?? true,
+      show_phone: initialData?.show_phone ?? false,
+      show_email: initialData?.show_email ?? true,
+      reasonable_hours_start: initialData?.reasonable_hours_start ?? 7,
+      reasonable_hours_end: initialData?.reasonable_hours_end ?? 22,
+    },
+  });
 
-// Recurring Block Sources
-export const BLOCK_SOURCES = [
-  { value: 'manual', label: 'Manual' },
-  { value: 'google_calendar', label: 'Google Calendar' },
-  { value: 'outlook_calendar', label: 'Outlook Calendar' },
-  { value: 'apple_calendar', label: 'Apple Calendar' },
-  { value: 'external_sync', label: 'External Sync' },
-] as const;
+  const watchedValues = watch();
 
-// Days of Week
-export const DAYS_OF_WEEK = [
-  { value: 0, label: 'Monday', short: 'Mon' },
-  { value: 1, label: 'Tuesday', short: 'Tue' },
-  { value: 2, label: 'Wednesday', short: 'Wed' },
-  { value: 3, label: 'Thursday', short: 'Thu' },
-  { value: 4, label: 'Friday', short: 'Fri' },
-  { value: 5, label: 'Saturday', short: 'Sat' },
-  { value: 6, label: 'Sunday', short: 'Sun' },
-] as const;
+  const handleFormSubmit = async (data: UserProfileData) => {
+    try {
+      const profileData = { ...data, brand_color: selectedColor };
+      await onSubmit(profileData);
+      toast.success('Profile updated successfully');
+    } catch (error: any) {
+      toast.error(error.error || 'Failed to update profile');
+    }
+  };
 
-// Time Zones (common ones)
-export const COMMON_TIMEZONES = [
-  'UTC',
-  'America/New_York',
-  'America/Chicago',
-  'America/Denver',
-  'America/Los_Angeles',
-  'Europe/London',
-  'Europe/Paris',
-  'Europe/Berlin',
-  'Asia/Tokyo',
-  'Asia/Shanghai',
-  'Asia/Kolkata',
-  'Australia/Sydney',
-] as const;
+  const handleColorSelect = (color: string) => {
+    setSelectedColor(color);
+    setValue('brand_color', color);
+    setColorPickerOpen(false);
+  };
 
-// Location Types
-export const LOCATION_TYPES = [
-  { value: 'video_call', label: 'Video Call', icon: 'VideoCameraIcon' },
-  { value: 'phone_call', label: 'Phone Call', icon: 'PhoneIcon' },
-  { value: 'in_person', label: 'In Person', icon: 'MapPinIcon' },
-  { value: 'custom', label: 'Custom', icon: 'CogIcon' },
-] as const;
+  const handleFileUpload = async (file: File, field: 'profile_picture' | 'brand_logo') => {
+    // This would typically upload to a file storage service
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('field', field);
+      
+      const response = await api.upload('/api/v1/users/upload-image/', formData);
+      formData.append('file', file);
+      formData.append('field', field);
+      
+      const response = await api.upload('/api/v1/users/upload-image/', formData);
+      const imageUrl = response.data.data?.url;
+      
+      if (imageUrl) {
+        setValue(field, imageUrl);
+        toast.success('Image uploaded successfully');
+      }
+    } catch (error: any) {
+      toast.error(error.error || 'Failed to upload image');
+    }
+  };
 
-// Booking Statuses
-export const BOOKING_STATUSES = [
-  { value: 'confirmed', label: 'Confirmed', color: 'success' },
-  { value: 'cancelled', label: 'Cancelled', color: 'error' },
-  { value: 'rescheduled', label: 'Rescheduled', color: 'warning' },
-  { value: 'completed', label: 'Completed', color: 'info' },
-  { value: 'no_show', label: 'No Show', color: 'error' },
-] as const;
+  const formatHour = (hour: number) => {
+    if (watchedValues.time_format === '24h') {
+      return `${hour.toString().padStart(2, '0')}:00`;
+    }
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    return `${displayHour}:00 ${ampm}`;
+  };
 
-// Account Statuses
-export const ACCOUNT_STATUSES = [
-  { value: 'active', label: 'Active', color: 'success' },
-  { value: 'inactive', label: 'Inactive', color: 'warning' },
-  { value: 'suspended', label: 'Suspended', color: 'error' },
-  { value: 'pending_verification', label: 'Pending Verification', color: 'warning' },
-  { value: 'password_expired', label: 'Password Expired', color: 'error' },
-  { value: 'password_expired_grace_period', label: 'Grace Period', color: 'warning' },
-] as const;
+  return (
+    <div className="max-w-4xl mx-auto space-y-6">
+      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+        <Tabs defaultValue="personal" className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="personal">Personal</TabsTrigger>
+            <TabsTrigger value="contact">Contact</TabsTrigger>
+            <TabsTrigger value="branding">Branding</TabsTrigger>
+            <TabsTrigger value="localization">Localization</TabsTrigger>
+            <TabsTrigger value="privacy">Privacy</TabsTrigger>
+          </TabsList>
 
-// Notification Types
-export const NOTIFICATION_TYPES = [
-  { value: 'email', label: 'Email', icon: 'EnvelopeIcon' },
-  { value: 'sms', label: 'SMS', icon: 'DevicePhoneMobileIcon' },
-] as const;
+          {/* Personal Information Tab */}
+          <TabsContent value="personal" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <User className="h-5 w-5" />
+                  <span>Personal Information</span>
+                </CardTitle>
+                <CardDescription>
+                  Basic information about yourself that will be displayed on your profile.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Profile Picture */}
+                <div className="flex items-center space-x-6">
+                  <Avatar className="h-24 w-24">
+                    <AvatarImage src={watchedValues.profile_picture} />
+                    <AvatarFallback className="text-2xl font-semibold">
+                      {getInitials(watchedValues.display_name || 'User')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="space-y-2">
+                    <Label>Profile Picture</Label>
+                    <div className="flex space-x-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const input = document.createElement('input');
+                          input.type = 'file';
+                          input.accept = 'image/*';
+                          input.onchange = (e) => {
+                            const file = (e.target as HTMLInputElement).files?.[0];
+                            if (file) handleFileUpload(file, 'profile_picture');
+                          };
+                          input.click();
+                        }}
+                        disabled={isSubmitting || isLoading}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload
+                      </Button>
+                      {watchedValues.profile_picture && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setValue('profile_picture', '')}
+                          disabled={isSubmitting || isLoading}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      JPG, PNG or GIF. Max size 5MB.
+                    </p>
+                  </div>
+                </div>
 
-// Workflow Triggers
-export const WORKFLOW_TRIGGERS = [
-  { value: 'booking_created', label: 'Booking Created' },
-  { value: 'booking_cancelled', label: 'Booking Cancelled' },
-  { value: 'booking_completed', label: 'Booking Completed' },
-  { value: 'before_meeting', label: 'Before Meeting' },
-  { value: 'after_meeting', label: 'After Meeting' },
-] as const;
+                {/* Display Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="display_name">Display Name *</Label>
+                  <Input
+                    id="display_name"
+                    {...register('display_name')}
+                    placeholder="Your display name"
+                    disabled={isSubmitting || isLoading}
+                  />
+                  {errors.display_name && (
+                    <p className="text-sm text-destructive">{errors.display_name.message}</p>
+                  )}
+                  <p className="text-sm text-muted-foreground">
+                    This is how your name will appear to invitees on your booking page.
+                  </p>
+                </div>
 
-// Workflow Action Types
-export const WORKFLOW_ACTION_TYPES = [
-  { value: 'send_email', label: 'Send Email', icon: 'EnvelopeIcon' },
-  { value: 'send_sms', label: 'Send SMS', icon: 'DevicePhoneMobileIcon' },
-  { value: 'webhook', label: 'Webhook', icon: 'LinkIcon' },
-  { value: 'update_booking', label: 'Update Booking', icon: 'PencilIcon' },
-] as const;
+                {/* Bio */}
+                <div className="space-y-2">
+                  <Label htmlFor="bio">Bio</Label>
+                  <Textarea
+                    id="bio"
+                    {...register('bio')}
+                    placeholder="Tell people a bit about yourself..."
+                    rows={4}
+                    disabled={isSubmitting || isLoading}
+                  />
+                  {errors.bio && (
+                    <p className="text-sm text-destructive">{errors.bio.message}</p>
+                  )}
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Optional bio that appears on your public profile</span>
+                    <span>{watchedValues.bio?.length || 0}/500</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-// Integration Providers
-export const INTEGRATION_PROVIDERS = {
-  CALENDAR: [
-    { value: 'google', label: 'Google Calendar', icon: '/icons/google.svg' },
-    { value: 'outlook', label: 'Microsoft Outlook', icon: '/icons/microsoft.svg' },
-    { value: 'apple', label: 'Apple Calendar', icon: '/icons/apple.svg' },
-  ],
-  VIDEO: [
-    { value: 'zoom', label: 'Zoom', icon: '/icons/zoom.svg' },
-    { value: 'google_meet', label: 'Google Meet', icon: '/icons/google-meet.svg' },
-    { value: 'microsoft_teams', label: 'Microsoft Teams', icon: '/icons/teams.svg' },
-    { value: 'webex', label: 'Webex', icon: '/icons/webex.svg' },
-  ],
-} as const;
+          {/* Contact Information Tab */}
+          <TabsContent value="contact" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Phone className="h-5 w-5" />
+                  <span>Contact Information</span>
+                </CardTitle>
+                <CardDescription>
+                  Professional contact details and company information.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      {...register('phone')}
+                      placeholder="+1 (555) 123-4567"
+                      disabled={isSubmitting || isLoading}
+                    />
+                    {errors.phone && (
+                      <p className="text-sm text-destructive">{errors.phone.message}</p>
+                    )}
+                  </div>
 
-// File Upload Limits
-export const FILE_UPLOAD_LIMITS = {
-  MAX_SIZE: 5 * 1024 * 1024, // 5MB
-  ALLOWED_TYPES: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
-  ALLOWED_EXTENSIONS: ['.jpg', '.jpeg', '.png', '.gif', '.webp'],
-} as const;
+                  <div className="space-y-2">
+                    <Label htmlFor="website">Website</Label>
+                    <Input
+                      id="website"
+                      type="url"
+                      {...register('website')}
+                      placeholder="https://yourwebsite.com"
+                      disabled={isSubmitting || isLoading}
+                    />
+                    {errors.website && (
+                      <p className="text-sm text-destructive">{errors.website.message}</p>
+                    )}
+                  </div>
+                </div>
 
-// Pagination
-export const PAGINATION = {
-  DEFAULT_PAGE_SIZE: 20,
-  PAGE_SIZE_OPTIONS: [10, 20, 50, 100],
-} as const;
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="company">Company</Label>
+                    <Input
+                      id="company"
+                      {...register('company')}
+                      placeholder="Your company name"
+                      disabled={isSubmitting || isLoading}
+                    />
+                    {errors.company && (
+                      <p className="text-sm text-destructive">{errors.company.message}</p>
+                    )}
+                  </div>
 
-// Date Formats
-export const DATE_FORMATS = [
-  { value: 'MM/DD/YYYY', label: 'MM/DD/YYYY (US)' },
-  { value: 'DD/MM/YYYY', label: 'DD/MM/YYYY (EU)' },
-  { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD (ISO)' },
-  { value: 'MMM DD, YYYY', label: 'MMM DD, YYYY' },
-] as const;
+                  <div className="space-y-2">
+                    <Label htmlFor="job_title">Job Title</Label>
+                    <Input
+                      id="job_title"
+                      {...register('job_title')}
+                      placeholder="Your job title"
+                      disabled={isSubmitting || isLoading}
+                    />
+                    {errors.job_title && (
+                      <p className="text-sm text-destructive">{errors.job_title.message}</p>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-// Time Formats
-export const TIME_FORMATS = [
-  { value: '12h', label: '12-hour (AM/PM)' },
-  { value: '24h', label: '24-hour' },
-] as const;
+          {/* Branding Tab */}
+          <TabsContent value="branding" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Palette className="h-5 w-5" />
+                  <span>Branding</span>
+                </CardTitle>
+                <CardDescription>
+                  Customize your brand colors and logo for your public booking pages.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Brand Color */}
+                <div className="space-y-2">
+                  <Label>Brand Color</Label>
+                  <div className="flex items-center space-x-2">
+                    <Popover open={colorPickerOpen} onOpenChange={setColorPickerOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start"
+                          disabled={isSubmitting || isLoading}
+                        >
+                          <div 
+                            className="w-4 h-4 rounded-full mr-2" 
+                            style={{ backgroundColor: selectedColor }}
+                          />
+                          <Palette className="h-4 w-4 mr-2" />
+                          {selectedColor}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-3">
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-5 gap-2">
+                            {PRESET_COLORS.map((color) => (
+                              <button
+                                key={color}
+                                type="button"
+                                className="w-8 h-8 rounded-full border-2 border-gray-200 hover:border-gray-400 transition-colors"
+                                style={{ backgroundColor: color }}
+                                onClick={() => handleColorSelect(color)}
+                              />
+                            ))}
+                          </div>
+                          <div>
+                            <Label htmlFor="custom-color">Custom Color</Label>
+                            <Input
+                              id="custom-color"
+                              type="color"
+                              value={selectedColor}
+                              onChange={(e) => handleColorSelect(e.target.value)}
+                              className="w-full h-10"
+                            />
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    This color will be used for buttons and accents on your booking pages.
+                  </p>
+                </div>
 
-// Languages
-export const LANGUAGES = [
-  { value: 'en', label: 'English' },
-  { value: 'es', label: 'Spanish' },
-  { value: 'fr', label: 'French' },
-  { value: 'de', label: 'German' },
-  { value: 'it', label: 'Italian' },
-  { value: 'pt', label: 'Portuguese' },
-  { value: 'ja', label: 'Japanese' },
-  { value: 'ko', label: 'Korean' },
-  { value: 'zh', label: 'Chinese' },
-] as const;
+                {/* Brand Logo */}
+                <div className="space-y-2">
+                  <Label>Brand Logo</Label>
+                  <div className="flex items-center space-x-4">
+                    {watchedValues.brand_logo && (
+                      <div className="w-16 h-16 border rounded-lg overflow-hidden">
+                        <img 
+                          src={watchedValues.brand_logo} 
+                          alt="Brand logo" 
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <div className="flex space-x-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.accept = 'image/*';
+                            input.onchange = (e) => {
+                              const file = (e.target as HTMLInputElement).files?.[0];
+                              if (file) handleFileUpload(file, 'brand_logo');
+                            };
+                            input.click();
+                          }}
+                          disabled={isSubmitting || isLoading}
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload Logo
+                        </Button>
+                        {watchedValues.brand_logo && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setValue('brand_logo', '')}
+                            disabled={isSubmitting || isLoading}
+                          >
+                            Remove
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        PNG or SVG recommended. Max size 2MB.
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
-// Error Messages
-export const ERROR_MESSAGES = {
-  REQUIRED: 'This field is required',
-  INVALID_EMAIL: 'Please enter a valid email address',
-  INVALID_URL: 'Please enter a valid URL',
-  INVALID_PHONE: 'Please enter a valid phone number',
-  PASSWORD_TOO_SHORT: 'Password must be at least 8 characters',
-  PASSWORD_MISMATCH: 'Passwords do not match',
-  NETWORK_ERROR: 'Network error. Please check your connection.',
-  UNAUTHORIZED: 'You are not authorized to perform this action',
-  FORBIDDEN: 'Access denied',
-  NOT_FOUND: 'The requested resource was not found',
-  SERVER_ERROR: 'An unexpected error occurred. Please try again.',
-  RATE_LIMITED: 'Too many requests. Please try again later.',
-} as const;
+                {/* Preview */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Brand Preview</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setProfilePreview(!profilePreview)}
+                    >
+                      {profilePreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {profilePreview ? 'Hide' : 'Preview'}
+                    </Button>
+                  </div>
+                  
+                  {profilePreview && (
+                    <div className="p-4 border rounded-lg" style={{ borderColor: selectedColor }}>
+                      <div className="flex items-center space-x-3 mb-3">
+                        {watchedValues.brand_logo ? (
+                          <img src={watchedValues.brand_logo} alt="Logo" className="h-8 w-8 object-contain" />
+                        ) : (
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback style={{ backgroundColor: selectedColor, color: 'white' }}>
+                              {getInitials(watchedValues.display_name || 'User')}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+                        <div>
+                          <div className="font-semibold">{watchedValues.display_name || 'Your Name'}</div>
+                          {watchedValues.company && (
+                            <div className="text-sm text-muted-foreground">{watchedValues.company}</div>
+                          )}
+                        </div>
+                      </div>
+                      <Button style={{ backgroundColor: selectedColor }} className="text-white">
+                        Book a Meeting
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-// Success Messages
-export const SUCCESS_MESSAGES = {
-  SAVED: 'Changes saved successfully',
-  CREATED: 'Created successfully',
-  UPDATED: 'Updated successfully',
-  DELETED: 'Deleted successfully',
-  SENT: 'Sent successfully',
-  COPIED: 'Copied to clipboard',
-  UPLOADED: 'Uploaded successfully',
-  CONNECTED: 'Connected successfully',
-  DISCONNECTED: 'Disconnected successfully',
-} as const;
+          {/* Localization Tab */}
+          <TabsContent value="localization" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Globe className="h-5 w-5" />
+                  <span>Localization Settings</span>
+                </CardTitle>
+                <CardDescription>
+                  Configure your timezone, language, and date/time format preferences.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="timezone_name">Timezone *</Label>
+                    <Select
+                      value={watchedValues.timezone_name}
+                      onValueChange={(value) => setValue('timezone_name', value)}
+                      disabled={isSubmitting || isLoading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COMMON_TIMEZONES.map((tz) => (
+                          <SelectItem key={tz} value={tz}>
+                            {tz}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.timezone_name && (
+                      <p className="text-sm text-destructive">{errors.timezone_name.message}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="language">Language *</Label>
+                    <Select
+                      value={watchedValues.language}
+                      onValueChange={(value) => setValue('language', value)}
+                      disabled={isSubmitting || isLoading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LANGUAGES.map((lang) => (
+                          <SelectItem key={lang.value} value={lang.value}>
+                            {lang.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.language && (
+                      <p className="text-sm text-destructive">{errors.language.message}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="date_format">Date Format *</Label>
+                    <Select
+                      value={watchedValues.date_format}
+                      onValueChange={(value) => setValue('date_format', value)}
+                      disabled={isSubmitting || isLoading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {DATE_FORMATS.map((format) => (
+                          <SelectItem key={format.value} value={format.value}>
+                            {format.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.date_format && (
+                      <p className="text-sm text-destructive">{errors.date_format.message}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="time_format">Time Format *</Label>
+                    <Select
+                      value={watchedValues.time_format}
+                      onValueChange={(value) => setValue('time_format', value)}
+                      disabled={isSubmitting || isLoading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TIME_FORMATS.map((format) => (
+                          <SelectItem key={format.value} value={format.value}>
+                            {format.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.time_format && (
+                      <p className="text-sm text-destructive">{errors.time_format.message}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Reasonable Hours for Multi-Invitee Scheduling */}
+                <div className="space-y-4">
+                  <div>
+                    <Label>Reasonable Hours for Group Scheduling</Label>
+                    <p className="text-sm text-muted-foreground">
+                      When scheduling with multiple people across timezones, only suggest times within these hours.
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="reasonable_hours_start">Start Hour</Label>
+                      <Select
+                        value={watchedValues.reasonable_hours_start.toString()}
+                        onValueChange={(value) => setValue('reasonable_hours_start', parseInt(value))}
+                        disabled={isSubmitting || isLoading}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {HOUR_OPTIONS.map((hour) => (
+                            <SelectItem key={hour.value} value={hour.value.toString()}>
+                              {formatHour(hour.value)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="reasonable_hours_end">End Hour</Label>
+                      <Select
+                        value={watchedValues.reasonable_hours_end.toString()}
+                        onValueChange={(value) => setValue('reasonable_hours_end', parseInt(value))}
+                        disabled={isSubmitting || isLoading}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {HOUR_OPTIONS.map((hour) => (
+                            <SelectItem key={hour.value} value={hour.value.toString()}>
+                              {formatHour(hour.value)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Privacy Tab */}
+          <TabsContent value="privacy" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Eye className="h-5 w-5" />
+                  <span>Privacy Settings</span>
+                </CardTitle>
+                <CardDescription>
+                  Control what information is visible on your public profile.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="public_profile">Public Profile</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Make your profile visible to anyone with your booking link
+                      </p>
+                    </div>
+                    <Switch
+                      id="public_profile"
+                      checked={watchedValues.public_profile}
+                      onCheckedChange={(checked) => setValue('public_profile', checked)}
+                      disabled={isSubmitting || isLoading}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="show_email">Show Email Address</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Display your email address on your public profile
+                      </p>
+                    </div>
+                    <Switch
+                      id="show_email"
+                      checked={watchedValues.show_email}
+                      onCheckedChange={(checked) => setValue('show_email', checked)}
+                      disabled={isSubmitting || isLoading || !watchedValues.public_profile}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="show_phone">Show Phone Number</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Display your phone number on your public profile
+                      </p>
+                    </div>
+                    <Switch
+                      id="show_phone"
+                      checked={watchedValues.show_phone}
+                      onCheckedChange={(checked) => setValue('show_phone', checked)}
+                      disabled={isSubmitting || isLoading || !watchedValues.public_profile || !watchedValues.phone}
+                    />
+                  </div>
+                </div>
+
+                {!watchedValues.public_profile && (
+                  <Alert>
+                    <AlertDescription>
+                      Your profile is private. Only people with direct links to your event types can book with you.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Form Actions */}
+        <div className="flex space-x-2">
+          <Button
+            type="submit"
+            disabled={isSubmitting || isLoading}
+            className="flex-1"
+          >
+            {isSubmitting ? 'Saving...' : 'Save Profile'}
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+}

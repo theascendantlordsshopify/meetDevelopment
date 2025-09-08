@@ -92,8 +92,34 @@ export function ProfileForm({ initialData, onSubmit, isLoading = false }: Profil
 
   const handleFileUpload = async (file: File, field: 'profile_picture' | 'brand_logo') => {
     // This would typically upload to a file storage service
-    // For now, we'll show a placeholder implementation
-    toast.info('File upload functionality will be implemented with backend integration');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('field', field);
+      
+      const response = await api.upload('/api/v1/users/upload-image/', formData);
+      const imageUrl = response.data.data?.url;
+      
+      if (imageUrl) {
+        setValue(field, imageUrl);
+        toast.success('Image uploaded successfully');
+      }
+    } catch (error: any) {
+      toast.error(error.error || 'Failed to upload image');
+    }
+      formData.append('file', file);
+      formData.append('field', field);
+      
+      const response = await api.upload('/api/v1/users/upload-image/', formData);
+      const imageUrl = response.data.data?.url;
+      
+      if (imageUrl) {
+        setValue(field, imageUrl);
+        toast.success('Image uploaded successfully');
+      }
+    } catch (error: any) {
+      toast.error(error.error || 'Failed to upload image');
+    }
   };
 
   const formatHour = (hour: number) => {

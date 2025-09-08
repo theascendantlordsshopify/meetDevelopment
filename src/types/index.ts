@@ -1,583 +1,758 @@
-// Base types
-export interface BaseModel {
-  id: string;
-  created_at: string;
-  updated_at: string;
-}
+'use client';
 
-// API Response types
-export interface ApiResponse<T = any> {
-  data?: T;
-  message?: string;
-  errors?: Record<string, string[]>;
-  meta?: {
-    pagination?: PaginationMeta;
-    performance?: PerformanceMeta;
-  };
-}
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Upload, Palette, Globe, Clock, User, Building, Phone, Mail, Eye, EyeOff } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { userProfileSchema, type UserProfileData } from '@/lib/validations/users';
+import { COMMON_TIMEZONES, LANGUAGES, DATE_FORMATS, TIME_FORMATS } from '@/constants';
+import { getInitials } from '@/lib/utils';
+import toast from 'react-hot-toast';
 
-export interface PaginationMeta {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  page_size: number;
-  current_page: number;
-  total_pages: number;
-}
-
-export interface PerformanceMeta {
-  query_time: number;
-  cache_hit: boolean;
-}
-
-export interface ApiError {
-  error: string;
-  details?: string;
-  code?: string;
-  field_errors?: Record<string, string[]>;
-}
-
-// User types
-export interface User extends BaseModel {
+export interface TeamMember extends BaseModel {
   email: string;
   first_name: string;
   last_name: string;
-  is_organizer: boolean;
-  is_email_verified: boolean;
-  is_phone_verified: boolean;
-  is_mfa_enabled: boolean;
-  account_status: 'active' | 'inactive' | 'suspended' | 'pending_verification' | 'password_expired' | 'password_expired_grace_period';
   roles: Role[];
+  is_active: boolean;
   last_login: string | null;
-  profile?: UserProfile;
 }
 
-export interface UserProfile extends BaseModel {
-  user: string;
-  organizer_slug: string;
-  display_name: string;
-  bio: string;
-  profile_picture: string | null;
-  phone: string;
-  website: string;
-  company: string;
-  job_title: string;
-  timezone_name: string;
-  language: string;
-  date_format: string;
-  time_format: string;
-  brand_color: string;
-  brand_logo: string | null;
-  public_profile: boolean;
-  show_phone: boolean;
-  show_email: boolean;
-  reasonable_hours_start: number;
-  reasonable_hours_end: number;
-}
-
-export interface Role extends BaseModel {
-  name: string;
-  role_type: 'admin' | 'organizer' | 'team_member' | 'billing_manager' | 'viewer';
-  parent: string | null;
-  role_permissions: Permission[];
-  is_system_role: boolean;
-}
-
-export interface Permission extends BaseModel {
-  codename: string;
-  name: string;
-  description: string;
-  category: string;
-}
-
-// Authentication types
-export interface LoginCredentials {
+export interface Invitation extends BaseModel {
   email: string;
-  password: string;
-  remember_me?: boolean;
-}
-
-export interface RegisterData {
-  email: string;
-  first_name: string;
-  last_name: string;
-  password: string;
-  password_confirm: string;
-  terms_accepted: boolean;
-}
-
-export interface AuthResponse {
-  user: User;
-  token: string;
+  role: Role;
+  status: 'pending' | 'accepted' | 'declined' | 'expired';
+  invited_by: string;
   expires_at: string;
+  message?: string;
 }
 
-export interface MFASetupResponse {
-  qr_code?: string;
-  secret?: string;
-  backup_codes?: string[];
-}
-
-// Event types
-export interface EventType extends BaseModel {
-  organizer: string;
-  name: string;
-  event_type_slug: string;
-  description: string;
-  duration: number;
-  max_attendees: number;
-  enable_waitlist: boolean;
-  is_active: boolean;
-  is_private: boolean;
-  min_scheduling_notice: number;
-  max_scheduling_horizon: number;
-  buffer_time_before: number;
-  buffer_time_after: number;
-  max_bookings_per_day: number | null;
-  slot_interval_minutes: number;
-  recurrence_type: 'none' | 'daily' | 'weekly' | 'monthly';
-  recurrence_rule: string;
-  max_occurrences: number | null;
-  recurrence_end_date: string | null;
-  location_type: 'video_call' | 'phone_call' | 'in_person' | 'custom';
-  location_details: string;
-  redirect_url_after_booking: string;
-  custom_questions: CustomQuestion[];
-  booking_count?: number;
-  success_rate?: number;
-}
-
-export interface CustomQuestion extends BaseModel {
-  event_type: string;
-  question_text: string;
-  question_type: 'text' | 'textarea' | 'select' | 'multiselect' | 'checkbox' | 'radio' | 'email' | 'phone' | 'number' | 'date' | 'time' | 'url';
-  is_required: boolean;
-  order: number;
-  options: string[] | null;
-  conditions: any;
-  validation_rules: any;
-}
-
-// Booking types
-export interface Booking extends BaseModel {
-  event_type: EventType;
-  organizer: User;
-  invitee_name: string;
-  invitee_email: string;
-  invitee_phone: string;
-  invitee_timezone: string;
-  start_time: string;
-  end_time: string;
-  status: 'confirmed' | 'cancelled' | 'rescheduled' | 'completed' | 'no_show';
-  attendee_count: number;
-  recurrence_id: string | null;
-  is_recurring_exception: boolean;
-  recurrence_sequence: number;
-  access_token: string;
-  custom_answers: Record<string, any>;
-  meeting_link: string;
-  meeting_id: string;
-  meeting_password: string;
-  external_calendar_event_id: string;
-  calendar_sync_status: 'pending' | 'succeeded' | 'failed' | 'not_required';
-  calendar_sync_error: string;
-  cancelled_at: string | null;
-  cancelled_by: 'organizer' | 'invitee' | 'system' | null;
-  cancellation_reason: string;
-  rescheduled_from: string | null;
-  rescheduled_at: string | null;
-  attendees?: BookingAttendee[];
-}
-
-export interface BookingAttendee extends BaseModel {
-  booking: string;
-  name: string;
+export interface InvitationDetails extends BaseModel {
   email: string;
-  phone: string;
-  status: 'confirmed' | 'cancelled' | 'no_show';
-  custom_answers: Record<string, any>;
-  joined_at: string;
-  cancelled_at: string | null;
-  cancellation_reason: string;
-}
-
-export interface BookingCreateData {
-  event_type_slug: string;
-  organizer_slug: string;
-  start_time: string;
-  end_time: string;
-  invitee_name: string;
-  invitee_email: string;
-  invitee_phone?: string;
-  invitee_timezone: string;
-  attendee_count?: number;
-  custom_answers?: Record<string, any>;
-}
-
-// Availability types
-export interface AvailabilityRule extends BaseModel {
-  organizer: string;
-  day_of_week: number;
-  start_time: string;
-  end_time: string;
-  event_types: string[];
-  is_active: boolean;
-}
-
-export interface DateOverrideRule extends BaseModel {
-  organizer: string;
-  date: string;
-  is_available: boolean;
-  start_time: string | null;
-  end_time: string | null;
-  event_types: string[];
-  reason: string;
-  is_active: boolean;
-}
-
-export interface BlockedTime extends BaseModel {
-  organizer: string;
-  start_datetime: string;
-  end_datetime: string;
-  reason: string;
-  source: 'manual' | 'google_calendar' | 'outlook_calendar' | 'apple_calendar' | 'external_sync';
-  external_id: string;
-  external_updated_at: string | null;
-  is_active: boolean;
-}
-
-export interface BufferTime extends BaseModel {
-  organizer: string;
-  default_buffer_before: number;
-  default_buffer_after: number;
-  minimum_gap: number;
-  slot_interval_minutes: number;
-}
-
-export interface TimeSlot {
-  start_time: string;
-  end_time: string;
-  available_spots?: number;
-  total_spots?: number;
-  is_waitlist_available?: boolean;
-}
-
-export interface AvailabilityResponse {
-  date: string;
-  slots: TimeSlot[];
-  timezone: string;
-  performance_metrics?: {
-    computation_time: number;
-    cache_hit: boolean;
-    slots_generated: number;
-  };
-}
-
-// Integration types
-export interface CalendarIntegration extends BaseModel {
-  organizer: string;
-  provider: 'google' | 'outlook' | 'apple';
-  provider_user_id: string;
-  provider_email: string;
-  calendar_id: string;
-  last_sync_at: string | null;
-  sync_token: string;
-  sync_errors: number;
-  is_active: boolean;
-  sync_enabled: boolean;
-}
-
-export interface VideoConferenceIntegration extends BaseModel {
-  organizer: string;
-  provider: 'zoom' | 'google_meet' | 'microsoft_teams' | 'webex';
-  provider_user_id: string;
-  provider_email: string;
-  last_api_call: string | null;
-  api_calls_today: number;
-  rate_limit_reset_at: string | null;
-  is_active: boolean;
-  auto_generate_links: boolean;
-}
-
-export interface WebhookIntegration extends BaseModel {
-  organizer: string;
-  name: string;
-  webhook_url: string;
-  events: string[];
-  secret_key: string;
-  headers: Record<string, string>;
-  is_active: boolean;
-  retry_failed: boolean;
-  max_retries: number;
-}
-
-// Workflow types
-export interface Workflow extends BaseModel {
-  organizer: string;
-  name: string;
-  description: string;
-  trigger: 'booking_created' | 'booking_cancelled' | 'booking_completed' | 'before_meeting' | 'after_meeting';
-  event_types: string[];
-  delay_minutes: number;
-  is_active: boolean;
-  total_executions: number;
-  successful_executions: number;
-  failed_executions: number;
-  last_executed_at: string | null;
-  actions: WorkflowAction[];
-}
-
-export interface WorkflowAction extends BaseModel {
-  workflow: string;
-  name: string;
-  action_type: 'send_email' | 'send_sms' | 'webhook' | 'update_booking';
-  order: number;
-  recipient: 'organizer' | 'invitee' | 'both' | 'custom';
-  custom_email: string;
-  subject: string;
-  message: string;
-  webhook_url: string;
-  webhook_data: Record<string, any>;
-  conditions: any[];
-  update_booking_fields: Record<string, any>;
-  is_active: boolean;
-  total_executions: number;
-  successful_executions: number;
-  failed_executions: number;
-  last_executed_at: string | null;
-}
-
-export interface WorkflowExecution extends BaseModel {
-  workflow: string;
-  booking: string;
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
-  started_at: string;
-  completed_at: string | null;
-  error_message: string;
-  actions_executed: number;
-  actions_failed: number;
-  execution_log: any[];
-}
-
-// Notification types
-export interface NotificationTemplate extends BaseModel {
-  organizer: string;
-  name: string;
-  template_type: 'booking_confirmation' | 'booking_reminder' | 'booking_cancellation' | 'booking_rescheduled' | 'follow_up' | 'custom';
-  notification_type: 'email' | 'sms';
-  subject: string;
-  message: string;
-  is_active: boolean;
-  is_default: boolean;
-  required_placeholders: string[];
-  usage_count?: number;
-  last_used?: string;
-}
-
-export interface NotificationLog extends BaseModel {
-  organizer: string;
-  booking: string | null;
-  template: string | null;
-  notification_type: 'email' | 'sms';
-  recipient_email: string;
-  recipient_phone: string;
-  subject: string;
-  message: string;
-  status: 'pending' | 'sent' | 'failed' | 'bounced' | 'delivered' | 'opened' | 'clicked';
-  sent_at: string | null;
-  delivered_at: string | null;
-  opened_at: string | null;
-  clicked_at: string | null;
-  error_message: string;
-  retry_count: number;
-  max_retries: number;
-  external_id: string;
-  delivery_status: string;
-  provider_response: any;
-  template_info?: {
+  role: {
     name: string;
-    template_type: string;
+    role_type: string;
+    description?: string;
   };
-}
-
-export interface NotificationPreference extends BaseModel {
-  organizer: string;
-  booking_confirmations_email: boolean;
-  booking_reminders_email: boolean;
-  booking_cancellations_email: boolean;
-  daily_agenda_email: boolean;
-  booking_confirmations_sms: boolean;
-  booking_reminders_sms: boolean;
-  booking_cancellations_sms: boolean;
-  reminder_minutes_before: number;
-  daily_agenda_time: string;
-  dnd_enabled: boolean;
-  dnd_start_time: string;
-  dnd_end_time: string;
-  exclude_weekends_reminders: boolean;
-  exclude_weekends_agenda: boolean;
-  preferred_notification_method: 'email' | 'sms' | 'both';
-  max_reminders_per_day: number;
-}
-
-// Contact types
-export interface Contact extends BaseModel {
-  organizer: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string;
-  company: string;
-  job_title: string;
-  notes: string;
-  tags: string[];
-  total_bookings: number;
-  last_booking_date: string | null;
-  is_active: boolean;
-}
-
-export interface ContactGroup extends BaseModel {
-  organizer: string;
-  name: string;
-  description: string;
-  color: string;
-  contacts: string[];
-  contact_count?: number;
-}
-
-export interface ContactInteraction extends BaseModel {
-  contact: string;
-  organizer: string;
-  interaction_type: 'booking_created' | 'booking_completed' | 'booking_cancelled' | 'email_sent' | 'note_added' | 'manual_entry';
-  description: string;
-  booking: string | null;
-  metadata: any;
-}
-
-// Form types
-export interface FormField {
-  name: string;
-  label: string;
-  type: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'date' | 'time' | 'datetime-local';
-  placeholder?: string;
-  required?: boolean;
-  disabled?: boolean;
-  options?: { value: string; label: string }[];
-  validation?: any;
-  description?: string;
-}
-
-// UI types
-export interface SelectOption {
-  value: string;
-  label: string;
-  disabled?: boolean;
-  icon?: string;
-}
-
-export interface TabItem {
-  id: string;
-  label: string;
-  content: React.ReactNode;
-  disabled?: boolean;
-  badge?: string | number;
-}
-
-export interface MenuItem {
-  id: string;
-  label: string;
-  href?: string;
-  icon?: React.ComponentType<any>;
-  onClick?: () => void;
-  disabled?: boolean;
-  badge?: string | number;
-  children?: MenuItem[];
-}
-
-export interface BreadcrumbItem {
-  label: string;
-  href?: string;
-  current?: boolean;
-}
-
-export interface TableColumn<T = any> {
-  key: keyof T | string;
-  label: string;
-  sortable?: boolean;
-  width?: string;
-  align?: 'left' | 'center' | 'right';
-  render?: (value: any, row: T) => React.ReactNode;
-}
-
-export interface FilterOption {
-  key: string;
-  label: string;
-  type: 'text' | 'select' | 'date' | 'daterange' | 'checkbox';
-  options?: SelectOption[];
-  placeholder?: string;
-}
-
-// Chart types
-export interface ChartData {
-  labels: string[];
-  datasets: {
-    label: string;
-    data: number[];
-    backgroundColor?: string | string[];
-    borderColor?: string | string[];
-    borderWidth?: number;
-  }[];
-}
-
-export interface MetricCard {
-  title: string;
-  value: string | number;
-  change?: {
-    value: number;
-    type: 'increase' | 'decrease';
-    period: string;
+  invited_by: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    company?: string;
   };
-  icon?: React.ComponentType<any>;
-  color?: 'primary' | 'success' | 'warning' | 'error';
+  organization: {
+    name: string;
+    display_name: string;
+  };
+  message?: string;
+  expires_at: string;
+  status: string;
+  is_new_user?: boolean;
 }
 
-// Theme types
-export interface ThemeConfig {
-  colors: {
-    primary: string;
-    secondary: string;
-    success: string;
-    warning: string;
-    error: string;
-    background: string;
-    foreground: string;
-  };
-  fonts: {
-    sans: string;
-    mono: string;
-  };
-  borderRadius: string;
+interface ProfileFormProps {
+  initialData?: Partial<UserProfileData>;
+  onSubmit: (data: UserProfileData) => Promise<void>;
+  isLoading?: boolean;
 }
 
-// Utility types
-export type Status = 'idle' | 'loading' | 'success' | 'error';
+const PRESET_COLORS = [
+  '#0066cc', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', 
+  '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1',
+  '#1f2937', '#374151', '#6b7280', '#9ca3af', '#d1d5db'
+];
 
-export type SortDirection = 'asc' | 'desc';
+const HOUR_OPTIONS = Array.from({ length: 24 }, (_, i) => ({
+  value: i,
+  label: `${i.toString().padStart(2, '0')}:00`,
+}));
 
-export type ViewMode = 'list' | 'grid' | 'calendar';
+export function ProfileForm({ initialData, onSubmit, isLoading = false }: ProfileFormProps) {
+  const [selectedColor, setSelectedColor] = useState(initialData?.brand_color || '#0066cc');
+  const [colorPickerOpen, setColorPickerOpen] = useState(false);
+  const [profilePreview, setProfilePreview] = useState(false);
 
-export type DateRange = {
-  start: Date;
-  end: Date;
-};
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<UserProfileData>({
+    resolver: zodResolver(userProfileSchema),
+    defaultValues: {
+      display_name: initialData?.display_name ?? '',
+      bio: initialData?.bio ?? '',
+      profile_picture: initialData?.profile_picture ?? '',
+      phone: initialData?.phone ?? '',
+      website: initialData?.website ?? '',
+      company: initialData?.company ?? '',
+      job_title: initialData?.job_title ?? '',
+      timezone_name: initialData?.timezone_name ?? 'UTC',
+      language: initialData?.language ?? 'en',
+      date_format: initialData?.date_format ?? 'MM/DD/YYYY',
+      time_format: initialData?.time_format ?? '12h',
+      brand_color: initialData?.brand_color ?? '#0066cc',
+      brand_logo: initialData?.brand_logo ?? '',
+      public_profile: initialData?.public_profile ?? true,
+      show_phone: initialData?.show_phone ?? false,
+      show_email: initialData?.show_email ?? true,
+      reasonable_hours_start: initialData?.reasonable_hours_start ?? 7,
+      reasonable_hours_end: initialData?.reasonable_hours_end ?? 22,
+    },
+  });
 
-export type TimeRange = {
-  start: string;
-  end: string;
-};
+  const watchedValues = watch();
 
-export type Timezone = {
-  value: string;
-  label: string;
-  offset: string;
-};
+  const handleFormSubmit = async (data: UserProfileData) => {
+    try {
+      const profileData = { ...data, brand_color: selectedColor };
+      await onSubmit(profileData);
+      toast.success('Profile updated successfully');
+    } catch (error: any) {
+      toast.error(error.error || 'Failed to update profile');
+    }
+  };
+
+  const handleColorSelect = (color: string) => {
+    setSelectedColor(color);
+    setValue('brand_color', color);
+    setColorPickerOpen(false);
+  };
+
+  const handleFileUpload = async (file: File, field: 'profile_picture' | 'brand_logo') => {
+    // This would typically upload to a file storage service
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('field', field);
+      
+      const response = await api.upload('/api/v1/users/upload-image/', formData);
+      const imageUrl = response.data.data?.url;
+      
+      if (imageUrl) {
+        setValue(field, imageUrl);
+        toast.success('Image uploaded successfully');
+      }
+    } catch (error: any) {
+      toast.error(error.error || 'Failed to upload image');
+    }
+  };
+
+  const formatHour = (hour: number) => {
+    if (watchedValues.time_format === '24h') {
+      return `${hour.toString().padStart(2, '0')}:00`;
+    }
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    return `${displayHour}:00 ${ampm}`;
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6">
+      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+        <Tabs defaultValue="personal" className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="personal">Personal</TabsTrigger>
+            <TabsTrigger value="contact">Contact</TabsTrigger>
+            <TabsTrigger value="branding">Branding</TabsTrigger>
+            <TabsTrigger value="localization">Localization</TabsTrigger>
+            <TabsTrigger value="privacy">Privacy</TabsTrigger>
+          </TabsList>
+
+          {/* Personal Information Tab */}
+          <TabsContent value="personal" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <User className="h-5 w-5" />
+                  <span>Personal Information</span>
+                </CardTitle>
+                <CardDescription>
+                  Basic information about yourself that will be displayed on your profile.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Profile Picture */}
+                <div className="flex items-center space-x-6">
+                  <Avatar className="h-24 w-24">
+                    <AvatarImage src={watchedValues.profile_picture} />
+                    <AvatarFallback className="text-2xl font-semibold">
+                      {getInitials(watchedValues.display_name || 'User')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="space-y-2">
+                    <Label>Profile Picture</Label>
+                    <div className="flex space-x-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const input = document.createElement('input');
+                          input.type = 'file';
+                          input.accept = 'image/*';
+                          input.onchange = (e) => {
+                            const file = (e.target as HTMLInputElement).files?.[0];
+                            if (file) handleFileUpload(file, 'profile_picture');
+                          };
+                          input.click();
+                        }}
+                        disabled={isSubmitting || isLoading}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload
+                      </Button>
+                      {watchedValues.profile_picture && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setValue('profile_picture', '')}
+                          disabled={isSubmitting || isLoading}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      JPG, PNG or GIF. Max size 5MB.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Display Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="display_name">Display Name *</Label>
+                  <Input
+                    id="display_name"
+                    {...register('display_name')}
+                    placeholder="Your display name"
+                    disabled={isSubmitting || isLoading}
+                  />
+                  {errors.display_name && (
+                    <p className="text-sm text-destructive">{errors.display_name.message}</p>
+                  )}
+                  <p className="text-sm text-muted-foreground">
+                    This is how your name will appear to invitees on your booking page.
+                  </p>
+                </div>
+
+                {/* Bio */}
+                <div className="space-y-2">
+                  <Label htmlFor="bio">Bio</Label>
+                  <Textarea
+                    id="bio"
+                    {...register('bio')}
+                    placeholder="Tell people a bit about yourself..."
+                    rows={4}
+                    disabled={isSubmitting || isLoading}
+                  />
+                  {errors.bio && (
+                    <p className="text-sm text-destructive">{errors.bio.message}</p>
+                  )}
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Optional bio that appears on your public profile</span>
+                    <span>{watchedValues.bio?.length || 0}/500</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Contact Information Tab */}
+          <TabsContent value="contact" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Phone className="h-5 w-5" />
+                  <span>Contact Information</span>
+                </CardTitle>
+                <CardDescription>
+                  Professional contact details and company information.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      {...register('phone')}
+                      placeholder="+1 (555) 123-4567"
+                      disabled={isSubmitting || isLoading}
+                    />
+                    {errors.phone && (
+                      <p className="text-sm text-destructive">{errors.phone.message}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="website">Website</Label>
+                    <Input
+                      id="website"
+                      type="url"
+                      {...register('website')}
+                      placeholder="https://yourwebsite.com"
+                      disabled={isSubmitting || isLoading}
+                    />
+                    {errors.website && (
+                      <p className="text-sm text-destructive">{errors.website.message}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="company">Company</Label>
+                    <Input
+                      id="company"
+                      {...register('company')}
+                      placeholder="Your company name"
+                      disabled={isSubmitting || isLoading}
+                    />
+                    {errors.company && (
+                      <p className="text-sm text-destructive">{errors.company.message}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="job_title">Job Title</Label>
+                    <Input
+                      id="job_title"
+                      {...register('job_title')}
+                      placeholder="Your job title"
+                      disabled={isSubmitting || isLoading}
+                    />
+                    {errors.job_title && (
+                      <p className="text-sm text-destructive">{errors.job_title.message}</p>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Branding Tab */}
+          <TabsContent value="branding" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Palette className="h-5 w-5" />
+                  <span>Branding</span>
+                </CardTitle>
+                <CardDescription>
+                  Customize your brand colors and logo for your public booking pages.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Brand Color */}
+                <div className="space-y-2">
+                  <Label>Brand Color</Label>
+                  <div className="flex items-center space-x-2">
+                    <Popover open={colorPickerOpen} onOpenChange={setColorPickerOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start"
+                          disabled={isSubmitting || isLoading}
+                        >
+                          <div 
+                            className="w-4 h-4 rounded-full mr-2" 
+                            style={{ backgroundColor: selectedColor }}
+                          />
+                          <Palette className="h-4 w-4 mr-2" />
+                          {selectedColor}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-3">
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-5 gap-2">
+                            {PRESET_COLORS.map((color) => (
+                              <button
+                                key={color}
+                                type="button"
+                                className="w-8 h-8 rounded-full border-2 border-gray-200 hover:border-gray-400 transition-colors"
+                                style={{ backgroundColor: color }}
+                                onClick={() => handleColorSelect(color)}
+                              />
+                            ))}
+                          </div>
+                          <div>
+                            <Label htmlFor="custom-color">Custom Color</Label>
+                            <Input
+                              id="custom-color"
+                              type="color"
+                              value={selectedColor}
+                              onChange={(e) => handleColorSelect(e.target.value)}
+                              className="w-full h-10"
+                            />
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    This color will be used for buttons and accents on your booking pages.
+                  </p>
+                </div>
+
+                {/* Brand Logo */}
+                <div className="space-y-2">
+                  <Label>Brand Logo</Label>
+                  <div className="flex items-center space-x-4">
+                    {watchedValues.brand_logo && (
+                      <div className="w-16 h-16 border rounded-lg overflow-hidden">
+                        <img 
+                          src={watchedValues.brand_logo} 
+                          alt="Brand logo" 
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <div className="flex space-x-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.accept = 'image/*';
+                            input.onchange = (e) => {
+                              const file = (e.target as HTMLInputElement).files?.[0];
+                              if (file) handleFileUpload(file, 'brand_logo');
+                            };
+                            input.click();
+                          }}
+                          disabled={isSubmitting || isLoading}
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload Logo
+                        </Button>
+                        {watchedValues.brand_logo && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setValue('brand_logo', '')}
+                            disabled={isSubmitting || isLoading}
+                          >
+                            Remove
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        PNG or SVG recommended. Max size 2MB.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Preview */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Brand Preview</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setProfilePreview(!profilePreview)}
+                    >
+                      {profilePreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {profilePreview ? 'Hide' : 'Preview'}
+                    </Button>
+                  </div>
+                  
+                  {profilePreview && (
+                    <div className="p-4 border rounded-lg" style={{ borderColor: selectedColor }}>
+                      <div className="flex items-center space-x-3 mb-3">
+                        {watchedValues.brand_logo ? (
+                          <img src={watchedValues.brand_logo} alt="Logo" className="h-8 w-8 object-contain" />
+                        ) : (
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback style={{ backgroundColor: selectedColor, color: 'white' }}>
+                              {getInitials(watchedValues.display_name || 'User')}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+                        <div>
+                          <div className="font-semibold">{watchedValues.display_name || 'Your Name'}</div>
+                          {watchedValues.company && (
+                            <div className="text-sm text-muted-foreground">{watchedValues.company}</div>
+                          )}
+                        </div>
+                      </div>
+                      <Button style={{ backgroundColor: selectedColor }} className="text-white">
+                        Book a Meeting
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Localization Tab */}
+          <TabsContent value="localization" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Globe className="h-5 w-5" />
+                  <span>Localization Settings</span>
+                </CardTitle>
+                <CardDescription>
+                  Configure your timezone, language, and date/time format preferences.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="timezone_name">Timezone *</Label>
+                    <Select
+                      value={watchedValues.timezone_name}
+                      onValueChange={(value) => setValue('timezone_name', value)}
+                      disabled={isSubmitting || isLoading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COMMON_TIMEZONES.map((tz) => (
+                          <SelectItem key={tz} value={tz}>
+                            {tz}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.timezone_name && (
+                      <p className="text-sm text-destructive">{errors.timezone_name.message}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="language">Language *</Label>
+                    <Select
+                      value={watchedValues.language}
+                      onValueChange={(value) => setValue('language', value)}
+                      disabled={isSubmitting || isLoading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LANGUAGES.map((lang) => (
+                          <SelectItem key={lang.value} value={lang.value}>
+                            {lang.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.language && (
+                      <p className="text-sm text-destructive">{errors.language.message}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="date_format">Date Format *</Label>
+                    <Select
+                      value={watchedValues.date_format}
+                      onValueChange={(value) => setValue('date_format', value)}
+                      disabled={isSubmitting || isLoading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {DATE_FORMATS.map((format) => (
+                          <SelectItem key={format.value} value={format.value}>
+                            {format.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.date_format && (
+                      <p className="text-sm text-destructive">{errors.date_format.message}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="time_format">Time Format *</Label>
+                    <Select
+                      value={watchedValues.time_format}
+                      onValueChange={(value) => setValue('time_format', value)}
+                      disabled={isSubmitting || isLoading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TIME_FORMATS.map((format) => (
+                          <SelectItem key={format.value} value={format.value}>
+                            {format.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.time_format && (
+                      <p className="text-sm text-destructive">{errors.time_format.message}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Reasonable Hours for Multi-Invitee Scheduling */}
+                <div className="space-y-4">
+                  <div>
+                    <Label>Reasonable Hours for Group Scheduling</Label>
+                    <p className="text-sm text-muted-foreground">
+                      When scheduling with multiple people across timezones, only suggest times within these hours.
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="reasonable_hours_start">Start Hour</Label>
+                      <Select
+                        value={watchedValues.reasonable_hours_start.toString()}
+                        onValueChange={(value) => setValue('reasonable_hours_start', parseInt(value))}
+                        disabled={isSubmitting || isLoading}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {HOUR_OPTIONS.map((hour) => (
+                            <SelectItem key={hour.value} value={hour.value.toString()}>
+                              {formatHour(hour.value)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="reasonable_hours_end">End Hour</Label>
+                      <Select
+                        value={watchedValues.reasonable_hours_end.toString()}
+                        onValueChange={(value) => setValue('reasonable_hours_end', parseInt(value))}
+                        disabled={isSubmitting || isLoading}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {HOUR_OPTIONS.map((hour) => (
+                            <SelectItem key={hour.value} value={hour.value.toString()}>
+                              {formatHour(hour.value)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Privacy Tab */}
+          <TabsContent value="privacy" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Eye className="h-5 w-5" />
+                  <span>Privacy Settings</span>
+                </CardTitle>
+                <CardDescription>
+                  Control what information is visible on your public profile.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="public_profile">Public Profile</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Make your profile visible to anyone with your booking link
+                      </p>
+                    </div>
+                    <Switch
+                      id="public_profile"
+                      checked={watchedValues.public_profile}
+                      onCheckedChange={(checked) => setValue('public_profile', checked)}
+                      disabled={isSubmitting || isLoading}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="show_email">Show Email Address</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Display your email address on your public profile
+                      </p>
+                    </div>
+                    <Switch
+                      id="show_email"
+                      checked={watchedValues.show_email}
+                      onCheckedChange={(checked) => setValue('show_email', checked)}
+                      disabled={isSubmitting || isLoading || !watchedValues.public_profile}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="show_phone">Show Phone Number</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Display your phone number on your public profile
+                      </p>
+                    </div>
+                    <Switch
+                      id="show_phone"
+                      checked={watchedValues.show_phone}
+                      onCheckedChange={(checked) => setValue('show_phone', checked)}
+                      disabled={isSubmitting || isLoading || !watchedValues.public_profile || !watchedValues.phone}
+                    />
+                  </div>
+                </div>
+
+                {!watchedValues.public_profile && (
+                  <Alert>
+                    <AlertDescription>
+                      Your profile is private. Only people with direct links to your event types can book with you.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Form Actions */}
+        <div className="flex space-x-2">
+          <Button
+            type="submit"
+            disabled={isSubmitting || isLoading}
+            className="flex-1"
+          >
+            {isSubmitting ? 'Saving...' : 'Save Profile'}
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+}

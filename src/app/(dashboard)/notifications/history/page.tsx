@@ -63,7 +63,7 @@ export default function NotificationHistoryPage() {
       if (filters.template_type) params.append('template_type', filters.template_type);
       if (filters.search) params.append('search', filters.search);
 
-      const response = await api.get(`/api/v1/notifications/logs/?${params}`);
+      const response = await api.get(`${API_ENDPOINTS.NOTIFICATIONS.LOGS}?${params}`);
       setLogs(response.data.data || []);
     } catch (error: any) {
       toast.error(error.error || 'Failed to load notification history');
@@ -74,7 +74,7 @@ export default function NotificationHistoryPage() {
 
   const handleResendNotification = async (log: NotificationLog) => {
     try {
-      await api.post(`/api/v1/notifications/${log.id}/resend/`);
+      await api.post(API_ENDPOINTS.NOTIFICATIONS.LOG_RESEND(log.id));
       toast.success('Notification resent successfully');
       fetchNotificationLogs(); // Refresh the list
     } catch (error: any) {
@@ -92,7 +92,7 @@ export default function NotificationHistoryPage() {
       if (filters.template_type) params.append('template_type', filters.template_type);
       if (filters.search) params.append('search', filters.search);
 
-      await api.download(`/api/v1/notifications/logs/export/?${params}`, 'notification-history.csv');
+      await api.download(`${API_ENDPOINTS.NOTIFICATIONS.LOGS}export/?${params}`, 'notification-history.csv');
       toast.success('Notification history exported successfully');
     } catch (error: any) {
       toast.error(error.error || 'Failed to export notification history');
