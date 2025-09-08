@@ -39,6 +39,7 @@ export const ROUTES = {
   // Public booking routes
   PUBLIC_PROFILE: (slug: string) => `/${slug}`,
   PUBLIC_BOOKING: (organizerSlug: string, eventSlug: string) => `/${organizerSlug}/${eventSlug}`,
+  PUBLIC_BOOKING: (organizerSlug: string, eventSlug: string) => `/${organizerSlug}/${eventSlug}`,
   BOOKING_MANAGEMENT: (token: string) => `/booking/${token}/manage`,
 } as const;
 
@@ -71,6 +72,7 @@ export const API_ENDPOINTS = {
   EVENT_TYPES: {
     LIST: '/api/v1/events/event-types/',
     DETAIL: (id: string) => `/api/v1/events/event-types/${id}/`,
+    PUBLIC: (organizerSlug: string, eventSlug: string) => `/${organizerSlug}/${eventSlug}/`,
     PUBLIC: (organizerSlug: string, eventSlug: string) => `/${organizerSlug}/${eventSlug}/`,
   },
   
