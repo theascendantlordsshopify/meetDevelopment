@@ -28,6 +28,10 @@ export const ROUTES = {
   ANALYTICS: '/analytics',
   SETTINGS: '/settings',
   
+  // MFA routes
+  MFA_SETUP: '/mfa/setup',
+  MFA_MANAGE: '/mfa/manage',
+  
   // Profile routes
   PROFILE: '/profile',
   TEAM: '/team',
@@ -52,6 +56,15 @@ export const API_ENDPOINTS = {
     CONFIRM_PASSWORD_RESET: '/api/v1/users/confirm-password-reset/',
     VERIFY_EMAIL: '/api/v1/users/verify-email/',
     RESEND_VERIFICATION: '/api/v1/users/resend-verification/',
+  },
+  
+  // MFA
+  MFA: {
+    SETUP: '/api/v1/users/mfa/setup/',
+    VERIFY: '/api/v1/users/mfa/verify/',
+    DISABLE: '/api/v1/users/mfa/disable/',
+    DEVICES: '/api/v1/users/mfa/devices/',
+    BACKUP_CODES_REGENERATE: '/api/v1/users/mfa/backup-codes/regenerate/',
   },
   
   // Event Types
