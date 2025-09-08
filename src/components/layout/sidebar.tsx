@@ -1,34 +1,27 @@
-    icon: Link,
-
-import { useState } from 'react';
+    import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-    icon: Users,
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-    icon: BarChart3,
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-    icon: UserCheck,
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { userProfileSchema, type UserProfileData } from '@/lib/validations/users';
 import { COMMON_TIMEZONES, LANGUAGES, DATE_FORMATS, TIME_FORMATS } from '@/constants';
 import { getInitials } from '@/lib/utils';
-    icon: Shield,
 
 interface ProfileFormProps {
   initialData?: Partial<UserProfileData>;
   onSubmit: (data: UserProfileData) => Promise<void>;
-    icon: User,
+  isLoading?: boolean;
 }
 
 const PRESET_COLORS = [
   '#0066cc', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', 
-    icon: Settings,
   '#1f2937', '#374151', '#6b7280', '#9ca3af', '#d1d5db'
 ];
 
@@ -94,10 +87,6 @@ export function ProfileForm({ initialData, onSubmit, isLoading = false }: Profil
     // This would typically upload to a file storage service
     try {
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('field', field);
-      
-      const response = await api.upload('/api/v1/users/upload-image/', formData);
       formData.append('file', file);
       formData.append('field', field);
       
@@ -698,23 +687,22 @@ export function ProfileForm({ initialData, onSubmit, isLoading = false }: Profil
                     <AlertDescription>
                       Your profile is private. Only people with direct links to your event types can book with you.
                     </AlertDescription>
-    icon: Calendar,
                   </Alert>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
-    icon: Clock,
         </Tabs>
         {/* Form Actions */}
         <div className="flex space-x-2">
           <Button
-    icon: Zap,
             type="submit"
             className="flex-1"
+            disabled={isSubmitting || isLoading}
           >
             {isSubmitting ? 'Saving...' : 'Save Profile'}
-    icon: Bell,
           </Button>
+        </div>
       </form>
     </div>
   );
