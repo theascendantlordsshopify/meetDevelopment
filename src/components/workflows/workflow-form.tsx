@@ -265,7 +265,7 @@ export function WorkflowForm({
             <Zap className="h-4 w-4" />
             <AlertDescription>
               <strong>Preview:</strong> This workflow will trigger {formatDelayDisplay(watchedValues.delay_minutes).toLowerCase()} 
-              when "{getTriggerLabel(watchedValues.trigger).toLowerCase()}" occurs
+              when "{WORKFLOW_TRIGGERS.find(t => t.value === watchedValues.trigger)?.label.toLowerCase()}" occurs
               {selectedEventTypes.length > 0 && ` for ${selectedEventTypes.length} specific event type${selectedEventTypes.length > 1 ? 's' : ''}`}.
             </AlertDescription>
           </Alert>
